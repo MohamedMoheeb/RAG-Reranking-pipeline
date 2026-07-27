@@ -3,12 +3,12 @@ import chromadb
 from chromadb.utils import embedding_functions
 
 
-class DocumentIndexer:
-    """Handles vector store initialization and document indexing using ChromaDB."""
+class ParentChildIndexer:
+    """Indexes child chunks in ChromaDB while linking them to larger parent contexts."""
 
     def __init__(
         self,
-        collection_name: str = "rag_collection",
+        collection_name: str = "rag_parent_child",
         model_name: str = "all-MiniLM-L6-v2",
         persist_directory: str = "./chroma_db"
     ):
@@ -22,14 +22,22 @@ class DocumentIndexer:
             metadata={"hnsw:space": "cosine"}
         )
 
-    def add_documents(self, documents: List[str], metadatas: List[Dict[str, Any]] = None, ids: List[str] = None):
-        """Indexes text chunks into the vector store."""
-        if ids is None:
-            ids = [f"doc_{i}" for i in range(len(documents))]
+    def add_parent_child_documents(self, parent_child_pairs: List[Dict[str, str]]):
+        """
+        Expects a list of dicts:
+        [{"parent_id": "p1", "parent_text": "...", "child_id": "c1", "child_text": "..."}, ...]
+        """
+        documents = [item["child_text"] for item in parent_child_pairs]
+        ids = [item["child_id"] for item in parent_child_pairs]
+        metadatas = [
+            {"parent_id": item["parent_id"], "parent_text": item["parent_text"]}
+            for item in parent_child_pairs
+        ]
 
-        self.collection.add(
+        # Use upsert to avoid duplicate key errors when re-running scripts
+        self.collection.upsert(
             documents=documents,
             metadatas=metadatas,
             ids=ids
         )
-        print(f"Successfully indexed {len(documents)} document chunks.")
+        print(f"Successfully indexed/updated {len(documents)} child chunks linked to parent contexts.")
