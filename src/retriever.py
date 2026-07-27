@@ -4,11 +4,11 @@ from chromadb.utils import embedding_functions
 
 
 class VectorRetriever:
-    """Retrieves candidate document chunks from ChromaDB using dense embeddings."""
+    """Performs top-K dense vector similarity retrieval against ChromaDB."""
 
     def __init__(
         self,
-        collection_name: str = "rag_collection",
+        collection_name: str = "rag_parent_child",
         model_name: str = "all-MiniLM-L6-v2",
         persist_directory: str = "./chroma_db"
     ):
@@ -22,15 +22,22 @@ class VectorRetriever:
         )
 
     def retrieve(self, query: str, top_k: int = 10) -> List[Dict[str, Any]]:
-        """Queries ChromaDB and formats top-k retrieved contexts."""
         results = self.collection.query(
             query_texts=[query],
             n_results=top_k
         )
 
         candidates = []
-        if results["documents"]:
-            for doc, doc_id in zip(results["documents"][0], results["ids"][0]):
-                candidates.append({"id": doc_id, "text": doc})
+        if results["documents"] and results["documents"][0]:
+            docs = results["documents"][0]
+            ids = results["ids"][0]
+            metadatas = results["metadatas"][0] if results.get("metadatas") else [{}] * len(docs)
+
+            for doc, doc_id, meta in zip(docs, ids, metadatas):
+                candidates.append({
+                    "id": doc_id,
+                    "text": doc,
+                    "metadata": meta or {}
+                })
 
         return candidates
