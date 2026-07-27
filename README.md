@@ -51,8 +51,6 @@ Standard RAG architectures often suffer from low retrieval precision when relyin
 Ensure you have Python 3.10 or higher installed.
 
 ```bash
-git clone [https://github.com/MOHAMEDMOHEEB/RAG-Reranking-pipeline
-.git](https://github.com/MOHAMEDMOHEEB/RAG-Reranking-pipeline
-.git)
+git clone [https://github.com/MohamedMoheeb/RAG-Reranking-pipeline.git](https://github.com/MohamedMoheeb/RAG-Reranking-pipeline.git)
 cd RAG-Reranking-pipeline
 
