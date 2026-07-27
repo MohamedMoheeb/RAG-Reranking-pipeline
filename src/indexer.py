@@ -1,10 +1,15 @@
-from typing import List, Dict, Any
+import json
+import re
+from typing import List, Dict, Any, Tuple
 import chromadb
 from chromadb.utils import embedding_functions
 
 
 class ParentChildIndexer:
-    """Indexes child chunks in ChromaDB while linking them to larger parent contexts."""
+    """
+    Parses S3-style document dictionaries, creates parent-child mappings using
+    regex line-splitting and artifact filtering, and indexes the chunks into ChromaDB.
+    """
 
     def __init__(
         self,
@@ -22,22 +27,71 @@ class ParentChildIndexer:
             metadata={"hnsw:space": "cosine"}
         )
 
-    def add_parent_child_documents(self, parent_child_pairs: List[Dict[str, str]]):
+    def process_and_index_s3_documents(
+        self, raw_s3_bucket: List[Dict[str, Any]]
+    ) -> Dict[str, Dict[str, Any]]:
         """
-        Expects a list of dicts:
-        [{"parent_id": "p1", "parent_text": "...", "child_id": "c1", "child_text": "..."}, ...]
+        Runs your exact notebook parsing logic:
+        1. Builds parent_document_store keyed by storage_uri.
+        2. Extracts child chunks via regex split with length filtering.
+        3. Serializes metadata (ACLs, title) for ChromaDB storage.
         """
-        documents = [item["child_text"] for item in parent_child_pairs]
-        ids = [item["child_id"] for item in parent_child_pairs]
-        metadatas = [
-            {"parent_id": item["parent_id"], "parent_text": item["parent_text"]}
-            for item in parent_child_pairs
-        ]
+        parent_document_store = {}
+        all_child_chunks = []
 
-        # Use upsert to avoid duplicate key errors when re-running scripts
-        self.collection.upsert(
-            documents=documents,
-            metadatas=metadatas,
-            ids=ids
-        )
-        print(f"Successfully indexed/updated {len(documents)} child chunks linked to parent contexts.")
+        for doc in raw_s3_bucket:
+            # Primary unique key across distributed landscape
+            parent_id = doc["storage_uri"]
+
+            # Store the pristine, complete raw string as Parent Context
+            parent_document_store[parent_id] = {
+                "text": doc["content"],
+                "title": doc["title"],
+                "acl": doc["acl_permitted_roles"]
+            }
+
+            # Parser Layer: Extract child rows/sentences
+            raw_lines = re.split(r'(?<=[.!?])\s+|\n', doc["content"])
+
+            for index, line in enumerate(raw_lines):
+                clean_line = line.strip()
+                # Filter out raw layout artifact noise (< 15 chars)
+                if len(clean_line) < 15:
+                    continue
+
+                all_child_chunks.append({
+                    "child_id": f"{parent_id}#chunk_{index}",
+                    "parent_id": parent_id,
+                    "text": clean_line,
+                    "parent_text": doc["content"],  # Store full context in metadata for retrieval fallback
+                    "metadata": {
+                        "parent_id": parent_id,
+                        "source_title": doc["title"],
+                        "permitted_roles": json.dumps(doc["acl_permitted_roles"])
+                    }
+                })
+
+        print(f"Constructed {len(all_child_chunks)} atomic child nodes linked back to parents.")
+
+        # Upsert into ChromaDB
+        if all_child_chunks:
+            documents = [chunk["text"] for chunk in all_child_chunks]
+            ids = [chunk["child_id"] for chunk in all_child_chunks]
+            metadatas = [
+                {
+                    "parent_id": chunk["parent_id"],
+                    "parent_text": chunk["parent_text"],
+                    "source_title": chunk["metadata"]["source_title"],
+                    "permitted_roles": chunk["metadata"]["permitted_roles"]
+                }
+                for chunk in all_child_chunks
+            ]
+
+            self.collection.upsert(
+                documents=documents,
+                ids=ids,
+                metadatas=metadatas
+            )
+            print(f"Successfully indexed {len(all_child_chunks)} chunks into ChromaDB.")
+
+        return parent_document_store
