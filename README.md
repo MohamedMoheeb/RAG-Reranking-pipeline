@@ -13,6 +13,7 @@ An end-to-end Retrieval-Augmented Generation (RAG) pipeline designed to minimize
 ## Architecture Overview
 
 Standard RAG architectures often suffer from low retrieval precision when relying solely on cosine similarity over dense vector embeddings. This repository implements a **Two-Stage Retrieval Pipeline**:
+```text
 [ User Query ] ──► [ Dense Retrieval (ChromaDB + Sentence-Transformers) ]
 │
 ▼  (Top-K Documents)
@@ -20,6 +21,7 @@ Standard RAG architectures often suffer from low retrieval precision when relyin
 │
 ▼  (Top-N Ultra-Relevant Contexts)
 [ LLM Context Window Generation ]
+```
 1. **Stage 1 (Dense Vector Search)**: Quickly retrieves the top candidate documents using `sentence-transformers` and `ChromaDB`.
 2. **Stage 2 (Re-Ranking)**: Applies cross-encoder models (`FlashRank` / `Rankify`) to compute fine-grained semantic relevance scores, filtering out irrelevant chunks before passing context to the LLM.
 
