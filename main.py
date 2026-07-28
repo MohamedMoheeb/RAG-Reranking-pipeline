@@ -35,9 +35,9 @@ def run_pipeline():
     ]
 
     # 2. Step 1: Index Chunks
-    print("--- Step 1: Indexing Chunks ---")
+    print("--- Step 1: Indexing Raw S3 Documents ---")
     indexer = ParentChildIndexer()
-    indexer.add_parent_child_documents(data_pairs)
+    parent_document_store = indexer.process_and_index_s3_documents(raw_s3_bucket)
 
     # 3. Step 2: Dense Similarity Retrieval (Child level)
     print("\n--- Step 2: Dense Retrieval ---")
