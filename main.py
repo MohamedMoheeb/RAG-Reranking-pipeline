@@ -6,16 +6,31 @@ def run_pipeline():
     # 1. Sample Data with Parent-Child Structure
     data_pairs = [
         {
-            "parent_id": "parent_1",
-            "parent_text": "Retrieval-Augmented Generation (RAG) significantly reduces LLM hallucinations by dynamically fetching verified context from an external vector database before generating an answer. This architectural pattern is widely used in enterprise search engines.",
-            "child_id": "child_1",
-            "child_text": "RAG reduces LLM hallucinations by dynamically fetching external context."
+            "storage_uri": "s3://central-bank-vault/policies/risk_matrix_2026.txt",
+            "title": "2026 Internal Risk Mitigation and Infrastructure Architecture Protocols",
+            "acl_permitted_roles": ["Compliance_Officer", "Audit_Team", "System_Admin"],
+            "content": (
+                "This document dictates infrastructure safety criteria. When processing capital transfers, "
+                "systems must cross-reference core ledger systems. Below is the active asset classification matrix:\n\n"
+                "| Component ID | Subsystem Target | Risk Vulnerability Level |\n"
+                "| :--- | :--- | :--- |\n"
+                "| AUTH-881 | User Credentials Layer | Medium |\n"
+                "| RISK-992-ALPHA | High-Frequency Transaction Pipeline | CRITICAL |\n"
+                "| STOR-004 | In-Memory Vault Mirroring | High |\n\n"
+                "Warning: Any structural unexpected downtime on asset RISK-992-ALPHA requires immediate rolling "
+                "hot-swaps to secondary nodes to prevent international reconciliation clearing failures."
+            )
         },
         {
-            "parent_id": "parent_2",
-            "parent_text": "FlashRank is a highly efficient cross-encoder re-ranking engine backed by ONNX runtime. It is specifically tailored for ultra-fast, low-latency search re-ranking in resource-constrained environments.",
-            "child_id": "child_2",
-            "child_text": "FlashRank uses ONNX runtime for ultra-fast, low-latency search re-ranking."
+            "storage_uri": "s3://central-bank-vault/hr/executive_compensation_q1.txt",
+            "title": "Q1 Executive Leadership Compensations and Active Payroll Tier Schema",
+            "acl_permitted_roles": ["Executive_Board", "HR_Director"],
+            "content": (
+                "Private Document - Strictly Restricted. Executive Salary distribution schedules for the fiscal year 2026. "
+                "Chief Executive Officer base compensation is set at $450,000 per quarter. Chief Technology Officer "
+                "base tier calculation stands at $380,000 per quarter. Discretionary performance bonuses are bound "
+                "by the asset allocation thresholds specified under HR-COMP-2026."
+            )
         }
     ]
 
